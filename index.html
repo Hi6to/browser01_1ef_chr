@@ -14,12 +14,14 @@
     </header>
 
     <!-- ② ナビゲーション（今回は飾りですが、将来カテゴリ検索などに使えます） -->
+    <!-- ナビゲーション部分だけ書き換えてください -->
     <nav>
-        <ul>
-            <li>ホーム</li>
-            <li>作曲</li>
-            <li>イラスト</li>
-            <li>その他</li>
+        <ul id="navList">
+            <!-- data-cat="..." という部分を追加しました -->
+            <li data-cat="all" class="active">ホーム</li>
+            <li data-cat="music">作曲</li>
+            <li data-cat="art">イラスト</li>
+            <li data-cat="other">その他</li>
         </ul>
     </nav>
 

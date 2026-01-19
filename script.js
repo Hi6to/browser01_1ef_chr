@@ -12,13 +12,6 @@ const firebaseConfig = {
   appId: "1:438455079136:web:4865d0ec3ed299de0bc085"
 };
 
-// エラーが起きたら画面に表示するヘルパー関数
-function showErrorMessage(msg) {
-    const errBox = document.getElementById('errorMessage');
-    if(errBox) errBox.textContent = "エラーが発生しました: " + msg;
-    console.error(msg);
-}
-
 try {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -28,43 +21,80 @@ try {
     const mainContent = document.getElementById('mainContent');
     const sidebarList = document.getElementById('sidebarList');
     
+    // ★ 全データを保存しておくための箱
+    let allMemos = [];
+
     // データベース監視
     const q = query(collection(db, "memos"), orderBy("createdAt", "desc"));
 
     onSnapshot(q, (snapshot) => {
-        if (snapshot.empty) {
-            if(mainContent) mainContent.innerHTML = "<p>まだ投稿がありません。</p>";
-            if(sidebarList) sidebarList.innerHTML = "";
+        // データを取得して箱に入れる
+        allMemos = [];
+        snapshot.forEach((doc) => {
+            allMemos.push({ id: doc.id, ...doc.data() });
+        });
+
+        // 最初は「すべて(all)」を表示
+        renderList("all");
+    });
+
+    // ★ ナビゲーションのクリック処理
+    const navItems = document.querySelectorAll('#navList li');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // 1. 他のタブの active を消して、これに active をつける
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            // 2. data-cat に書いてあるカテゴリ名を取得 (all, music, art...)
+            const category = item.dataset.cat;
+
+            // 3. そのカテゴリでリストを再表示
+            renderList(category);
+        });
+    });
+
+    // ★ リストとメイン画面を表示する関数
+    function renderList(filterCategory) {
+        if (!mainContent || !sidebarList) return;
+
+        sidebarList.innerHTML = '';
+        mainContent.innerHTML = '';
+
+        // カテゴリで絞り込み（allなら全部、それ以外なら一致するものだけ）
+        const filteredMemos = allMemos.filter(memo => {
+            if (filterCategory === 'all') return true;
+            return memo.category === filterCategory;
+        });
+
+        // データがない場合
+        if (filteredMemos.length === 0) {
+            mainContent.innerHTML = "<p style='padding:20px;'>このカテゴリの投稿はまだありません。</p>";
             return;
         }
 
-        const memos = [];
-        snapshot.forEach((doc) => {
-            memos.push({ id: doc.id, ...doc.data() });
+        // サイドバーを作る
+        filteredMemos.forEach((memo) => {
+            const div = document.createElement('div');
+            div.classList.add('sidebar-item');
+            div.textContent = memo.title;
+            
+            // クリックでメイン表示
+            div.addEventListener('click', () => {
+                displayMain(memo);
+            });
+            sidebarList.appendChild(div);
         });
 
-        if (mainContent && sidebarList) {
-            sidebarList.innerHTML = '';
-            memos.forEach((memo) => {
-                const div = document.createElement('div');
-                div.classList.add('sidebar-item');
-                div.textContent = memo.title;
-                div.addEventListener('click', () => {
-                    displayMain(memo);
-                });
-                sidebarList.appendChild(div);
-            });
-            displayMain(memos[0]);
-        }
-    }, (error) => {
-        // ここで通信エラーをキャッチ
-        showErrorMessage("データの読み込みに失敗しました。" + error.message);
-    });
+        // 絞り込んだリストの一番最新（0番目）をメインに表示
+        displayMain(filteredMemos[0]);
+    }
 
-    // 管理画面用の処理（省略せずに記述）
+    // --- 管理画面用（そのまま） ---
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
-        const loginArea = document.getElementById('loginArea');
+        // ...admin処理（長くなるので省略なしでそのまま記述します）...
+         const loginArea = document.getElementById('loginArea');
         const adminArea = document.getElementById('adminArea');
         const logoutBtn = document.getElementById('logoutBtn');
         const addBtn = document.getElementById('addBtn');
@@ -73,8 +103,7 @@ try {
             if (user) {
                 if(loginArea) loginArea.style.display = 'none';
                 if(adminArea) adminArea.style.display = 'flex';
-                const emailDisp = document.getElementById('userEmail');
-                if(emailDisp) emailDisp.textContent = user.email;
+                if(document.getElementById('userEmail')) document.getElementById('userEmail').textContent = user.email;
             } else {
                 if(loginArea) loginArea.style.display = 'block';
                 if(adminArea) adminArea.style.display = 'none';
@@ -82,12 +111,8 @@ try {
         });
 
         loginBtn.addEventListener('click', async () => {
-            try {
-                await signInWithEmailAndPassword(auth, 
-                    document.getElementById('emailInput').value, 
-                    document.getElementById('passInput').value
-                );
-            } catch (e) { alert("ログイン失敗: " + e.message); }
+            try { await signInWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passInput').value); } 
+            catch (e) { alert("ログイン失敗: " + e.message); }
         });
 
         if(logoutBtn) logoutBtn.addEventListener('click', async () => { await signOut(auth); });
@@ -99,7 +124,6 @@ try {
             const imageInput = document.getElementById('imageInput');
 
             if (title === '' && content === '') return;
-
             try {
                 let downloadURL = "";
                 if (imageInput && imageInput.files.length > 0) {
@@ -120,9 +144,10 @@ try {
     }
 
 } catch (e) {
-    showErrorMessage("起動エラー: " + e.message);
+    console.error(e);
 }
 
+// メイン表示関数
 function displayMain(data) {
     if (!document.getElementById('mainContent')) return;
     let categoryLabel = "その他";

@@ -21,47 +21,58 @@ try {
     const mainContent = document.getElementById('mainContent');
     const sidebarList = document.getElementById('sidebarList');
     
-    // ★ 全データを保存しておくための箱
+    // 全データを保存しておくための箱
     let allMemos = [];
 
     // データベース監視
     const q = query(collection(db, "memos"), orderBy("createdAt", "desc"));
 
     onSnapshot(q, (snapshot) => {
-        // データを取得して箱に入れる
         allMemos = [];
         snapshot.forEach((doc) => {
             allMemos.push({ id: doc.id, ...doc.data() });
         });
 
-        // 最初は「すべて(all)」を表示
-        renderList("all");
+        // ページ読み込み時は、現在 active になっているタブのカテゴリを表示する
+        // もし active がなければ 'all' (ホーム) とする
+        const activeTab = document.querySelector('nav li.active');
+        const initialCat = activeTab ? activeTab.dataset.cat : 'all';
+        renderList(initialCat);
     });
 
-    // ★ ナビゲーションのクリック処理
-    const navItems = document.querySelectorAll('#navList li');
+    // ★ 修正ポイント：IDを使わず、navタグの中のliを全て取得するように変更
+    const navItems = document.querySelectorAll('nav li');
+    
+    // ボタンが見つかっているか確認（F12キーのコンソールに出ます）
+    console.log("見つかったタブの数:", navItems.length);
+
     navItems.forEach(item => {
         item.addEventListener('click', () => {
-            // 1. 他のタブの active を消して、これに active をつける
+            // クリックされたらログを出す
+            console.log("タブがクリックされました:", item.textContent);
+
+            // 1. デザインの切り替え
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
 
-            // 2. data-cat に書いてあるカテゴリ名を取得 (all, music, art...)
+            // 2. data-cat属性を取得（HTMLに書いてある music とか art とか）
             const category = item.dataset.cat;
+            
+            // もしHTMLに書き忘れていたら 'all' 扱いにする安全策
+            const safeCategory = category ? category : 'all';
 
-            // 3. そのカテゴリでリストを再表示
-            renderList(category);
+            // 3. リストを再表示
+            renderList(safeCategory);
         });
     });
 
-    // ★ リストとメイン画面を表示する関数
+    // リストとメイン画面を表示する関数
     function renderList(filterCategory) {
         if (!mainContent || !sidebarList) return;
 
         sidebarList.innerHTML = '';
-        mainContent.innerHTML = '';
-
-        // カテゴリで絞り込み（allなら全部、それ以外なら一致するものだけ）
+        
+        // カテゴリで絞り込み
         const filteredMemos = allMemos.filter(memo => {
             if (filterCategory === 'all') return true;
             return memo.category === filterCategory;
@@ -69,7 +80,7 @@ try {
 
         // データがない場合
         if (filteredMemos.length === 0) {
-            mainContent.innerHTML = "<p style='padding:20px;'>このカテゴリの投稿はまだありません。</p>";
+            mainContent.innerHTML = "<div style='padding:20px; color:#666;'>このカテゴリの投稿はまだありません。</div>";
             return;
         }
 
@@ -79,22 +90,20 @@ try {
             div.classList.add('sidebar-item');
             div.textContent = memo.title;
             
-            // クリックでメイン表示
             div.addEventListener('click', () => {
                 displayMain(memo);
             });
             sidebarList.appendChild(div);
         });
 
-        // 絞り込んだリストの一番最新（0番目）をメインに表示
+        // 最新のものをメインに表示
         displayMain(filteredMemos[0]);
     }
 
-    // --- 管理画面用（そのまま） ---
+    // --- 管理画面用 ---
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
-        // ...admin処理（長くなるので省略なしでそのまま記述します）...
-         const loginArea = document.getElementById('loginArea');
+        const loginArea = document.getElementById('loginArea');
         const adminArea = document.getElementById('adminArea');
         const logoutBtn = document.getElementById('logoutBtn');
         const addBtn = document.getElementById('addBtn');
@@ -144,10 +153,11 @@ try {
     }
 
 } catch (e) {
+    // エラーがあったら画面に出す
+    alert("エラーが発生しました: " + e.message);
     console.error(e);
 }
 
-// メイン表示関数
 function displayMain(data) {
     if (!document.getElementById('mainContent')) return;
     let categoryLabel = "その他";

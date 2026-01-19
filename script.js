@@ -1,8 +1,8 @@
-// 1. Firebaseの機能をネットから読み込む
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-// 2. あなたのFirebase設定
+// Firebase設定
 const firebaseConfig = {
   apiKey: "AIzaSyCPu2xi_tQmBHOl9FZxu_q3sLoSfJj7Voc",
   authDomain: "project01-1e217.firebaseapp.com",
@@ -12,72 +12,97 @@ const firebaseConfig = {
   appId: "1:438455079136:web:4865d0ec3ed299de0bc085"
 };
 
-// 3. Firebaseを起動
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-// 4. HTML要素の取得
-const categorySelect = document.getElementById('categorySelect');
-const titleInput = document.getElementById('titleInput');
-const contentInput = document.getElementById('contentInput');
-const addBtn = document.getElementById('addBtn');
+// 要素の取得（存在しないページもあるのでnullチェックが必要）
 const memoList = document.getElementById('memoList');
 
-// 5. データベースの変更を監視する
-// 「memos」という新しいコレクション名に変更しました（既存のToDoと分けるため）
-// orderBy("createdAt", "desc") → 作成日の「降順（新しい順）」に並べる設定です
-const q = query(collection(db, "memos"), orderBy("createdAt", "desc")); 
+// --- 管理画面専用の要素 ---
+const loginArea = document.getElementById('loginArea');
+const adminArea = document.getElementById('adminArea');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const addBtn = document.getElementById('addBtn');
+
+// ===============================================
+// 1. 認証機能（admin.htmlでのみ動作）
+// ===============================================
+if (loginBtn) { // ログインボタンがあるページ(=admin.html)の場合だけ実行
+    
+    // ログイン状態の監視
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loginArea.style.display = 'none';
+            adminArea.style.display = 'flex'; // 入力欄を表示
+            document.getElementById('userEmail').textContent = user.email;
+        } else {
+            loginArea.style.display = 'block';
+            adminArea.style.display = 'none';
+        }
+    });
+
+    // ログインボタン処理
+    loginBtn.addEventListener('click', async () => {
+        const email = document.getElementById('emailInput').value;
+        const pass = document.getElementById('passInput').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (e) {
+            alert("ログイン失敗: " + e.message);
+        }
+    });
+
+    // ログアウトボタン処理
+    logoutBtn.addEventListener('click', async () => {
+        await signOut(auth);
+    });
+
+    // 投稿ボタン処理
+    addBtn.addEventListener('click', async function() {
+        const category = document.getElementById('categorySelect').value;
+        const title = document.getElementById('titleInput').value;
+        const content = document.getElementById('contentInput').value;
+
+        if (title === '' && content === '') return;
+
+        try {
+            await addDoc(collection(db, "memos"), {
+                category: category,
+                title: title,
+                content: content,
+                createdAt: new Date()
+            });
+            document.getElementById('titleInput').value = '';
+            document.getElementById('contentInput').value = '';
+        } catch (e) {
+            console.error(e);
+            alert("投稿エラー（権限がありません）");
+        }
+    });
+}
+
+// ===============================================
+// 2. データ表示機能（全ページ共通）
+// ===============================================
+const q = query(collection(db, "memos"), orderBy("createdAt", "desc"));
 
 onSnapshot(q, (snapshot) => {
-    memoList.innerHTML = ''; // 一旦リストを空にする
-
+    memoList.innerHTML = '';
     snapshot.forEach((document) => {
         const data = document.data();
         const id = document.id;
-        
-        // 画面に表示する関数を呼ぶ
         renderMemo(id, data);
     });
 });
 
-// 6. 「記録する」ボタンが押された時
-addBtn.addEventListener('click', async function() {
-    const category = categorySelect.value;
-    const title = titleInput.value;
-    const content = contentInput.value;
-
-    if (title === '' && content === '') {
-        alert("タイトルか内容を入力してください");
-        return;
-    }
-
-    // データベースに書き込む
-    try {
-        await addDoc(collection(db, "memos"), {
-            category: category,
-            title: title,
-            content: content,
-            createdAt: new Date()
-        });
-        
-        // 入力欄をクリア
-        titleInput.value = '';
-        contentInput.value = '';
-    } catch (e) {
-        console.error("エラー:", e);
-        alert("追加できませんでした");
-    }
-});
-
-// 7. 画面に表示する関数
 function renderMemo(id, data) {
-    // カテゴリ表示用のラベル設定
     let categoryLabel = "その他";
     if (data.category === "music") categoryLabel = "🎵 作曲";
     if (data.category === "art") categoryLabel = "🎨 イラスト";
 
     const div = document.createElement('div');
-    // CSSで色分けするためにクラスを追加 (category-musicなど)
     div.classList.add('memo-card', `category-${data.category}`);
 
     div.innerHTML = `
@@ -88,31 +113,26 @@ function renderMemo(id, data) {
         <div class="memo-content">${escapeHTML(data.content)}</div>
     `;
 
-    // 削除ボタン
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '削除';
-    deleteBtn.classList.add('delete-btn');
-    deleteBtn.addEventListener('click', async function() {
-        if(confirm("このメモを削除しますか？")) {
-            await deleteDoc(doc(db, "memos", id));
-        }
-    });
+    // 削除ボタンは管理者としてログインしている時だけ追加
+    if (auth.currentUser) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '削除';
+        deleteBtn.classList.add('delete-btn');
+        deleteBtn.addEventListener('click', async function() {
+            if(confirm("削除しますか？")) {
+                await deleteDoc(doc(db, "memos", id));
+            }
+        });
+        div.appendChild(deleteBtn);
+    }
 
-    div.appendChild(deleteBtn);
     memoList.appendChild(div);
-};
+}
 
-// セキュリティ対策：HTMLタグを無効化する関数
 function escapeHTML(str) {
-    if (!str) return ""; // 空の場合は空文字を返す
+    if (!str) return "";
     return str.replace(/[&<>"']/g, function(match) {
-        const escape = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        };
+        const escape = {'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'};
         return escape[match];
     });
 }

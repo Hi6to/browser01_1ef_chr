@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理】学習メモ</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 管理画面だとわかるようにヘッダーの色を変える */
+        body { background-color: #e3f2fd; }
+        h1::after { content: " (管理モード)"; font-size: 0.6em; color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>学習メモ</h1>
+        
+        <!-- ▼ ログインしていない時用 -->
+        <div id="loginArea" style="text-align: center; margin-bottom: 20px; background:white; padding:20px; border-radius:8px;">
+            <h3>管理者ログイン</h3>
+            <input type="email" id="emailInput" placeholder="メールアドレス" style="padding: 8px; margin: 5px;">
+            <input type="password" id="passInput" placeholder="パスワード" style="padding: 8px; margin: 5px;">
+            <br>
+            <button id="loginBtn" style="margin-top:10px;">ログイン</button>
+        </div>
+
+        <!-- ▼ ログイン成功時用（最初は隠す） -->
+        <div id="adminArea" class="input-area" style="display: none;">
+            <div style="text-align: right; margin-bottom: 10px;">
+                <span id="userEmail" style="font-size:12px; margin-right:10px;"></span>
+                <button id="logoutBtn" style="background:#666; font-size:12px; padding:4px 8px;">ログアウト</button>
+            </div>
+
+            <div class="input-row">
+                <select id="categorySelect">
+                    <option value="music">🎵 作曲</option>
+                    <option value="art">🎨 イラスト</option>
+                    <option value="other">📝 その他</option>
+                </select>
+                <input type="text" id="titleInput" placeholder="タイトル">
+            </div>
+            <textarea id="contentInput" placeholder="内容..."></textarea>
+            <button id="addBtn">記録する</button>
+        </div>
+
+        <!-- 自分の投稿を確認するためにリストも表示 -->
+        <div id="memoList"></div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

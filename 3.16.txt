@@ -1,0 +1,21 @@
+    1169:	f3 0f 1e fa          	endbr64
+    116d:	55                   	push   %rbp
+    116e:	48 89 e5             	mov    %rsp,%rbp
+    1171:	48 83 ec 10          	sub    $0x10,%rsp
+    1175:	c7 45 fc 40 42 0f 00 	movl   $0xf4240,-0x4(%rbp)
+    117c:	c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
+    1183:	eb 18                	jmp    119d <main+0x34>
+    1185:	48 8d 05 78 0e 00 00 	lea    0xe78(%rip),%rax        # 2004 <_IO_stdin_used+0x4>
+    118c:	48 89 c7             	mov    %rax,%rdi
+    118f:	b8 00 00 00 00       	mov    $0x0,%eax
+    1194:	e8 d7 fe ff ff       	call   1070 <printf@plt>
+    1199:	83 45 f8 01          	addl   $0x1,-0x8(%rbp)
+    119d:	8b 45 f8             	mov    -0x8(%rbp),%eax
+    11a0:	3b 45 fc             	cmp    -0x4(%rbp),%eax
+    11a3:	7c e0                	jl     1185 <main+0x1c>
+    11a5:	bf 0a 00 00 00       	mov    $0xa,%edi
+    11aa:	e8 b1 fe ff ff       	call   1060 <putchar@plt>
+    11af:	b8 00 00 00 00       	mov    $0x0,%eax
+    11b4:	c9                   	leave
+    11b5:	c3                   	ret
+

@@ -1,0 +1,11 @@
+break main
+display/i $pc
+display/d $bx
+display/d $ax
+display/x $eax
+display/x $rax
+display/d $rax
+display/d $rcx
+display/d $esi
+display/d $rdi
+display/d $rbx

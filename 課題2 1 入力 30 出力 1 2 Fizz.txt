@@ -171,21 +171,602 @@ Password is incorrect
 http://127.0.0.1:2000/login?password=hogehoge
 
 
+課題3-1
+基本課題3-1 NoSQL
+1. MongoDBとは
+
+MongoDBはNoSQLに分類されるデータベース管理システムの一つである。RDBMS（リレーショナルデータベース管理システム）では、データをテーブルと呼ばれる表形式で管理する。一方、MongoDBではデータをJSONに似たドキュメント形式で保存する。
+
+MongoDBでは、データベースの中に「コレクション」があり、その中に複数の「ドキュメント」を保存する。RDBMSのテーブルとレコードに近い構造であるが、MongoDBではドキュメントごとに異なる構造を持たせることもできる。
+
+例えば、ユーザー情報を保存する場合、次のようなデータを扱うことができる。
+
+{
+  "name": "Taro",
+  "age": 20,
+  "email": "taro@example.com"
+}
+
+
+このように、MongoDBはデータを柔軟な形式で保存できることが特徴である。
+
+2. RDBMSと比較した長所
+
+MongoDBの長所の一つは、データ構造を柔軟に変更できることである。RDBMSでは基本的にテーブルの構造をあらかじめ決める必要がある。一方、MongoDBではドキュメントごとに異なる項目を持たせることができる。
+
+また、大量のデータを複数のサーバに分散して処理することにも向いている。データを複数のサーバに分散させることで、アクセスが多いシステムでも処理を分散できる。
+
+さらに、JSONに近い形式でデータを扱うため、Webアプリケーションなどで利用しやすい。プログラムで扱うオブジェクトとデータベース上のデータの対応も比較的分かりやすい。
+
+3. RDBMSと比較した短所
+
+一方で、MongoDBはRDBMSと比較して、複雑なリレーションを扱う処理が苦手な場合がある。
+
+RDBMSでは複数のテーブルをJOINして関連するデータを取得することができる。MongoDBにも関連データを扱う機能はあるが、複雑な関係を持つデータでは、RDBMSの方が扱いやすい場合がある。
+
+また、データの整合性を厳密に管理する必要があるシステムでは、RDBMSの方が適している場合がある。そのため、どのようなシステムでもMongoDBがRDBMSより優れているわけではなく、データの性質やシステムの目的によって使い分ける必要がある。
+
+4. 想定している用途
+
+MongoDBは、データ構造が頻繁に変化するWebサービスや、大量のデータを扱うシステムなどで利用される。
+
+例えば、Webサイトのユーザー情報、商品情報、ログデータ、コンテンツ管理などに利用できる。
+
+特に、保存するデータの項目が一定ではない場合や、データ量が非常に多い場合に適している。
+
+5. 実際の使用例
+
+MongoDBはWebサービスや企業のシステムなどで利用されている。例えば、ユーザー情報や商品情報など、比較的柔軟な構造を持つデータを保存するために利用できる。
+
+また、アクセスログやセンサーデータなど、大量に発生するデータを保存する用途にも利用されている。
+
+6. まとめ
+
+MongoDBは、ドキュメント形式でデータを保存する代表的なNoSQLデータベースである。
+
+RDBMSと比較すると、データ構造を柔軟に変更でき、大量のデータを扱いやすいという長所がある。一方、複雑なリレーションや厳密なデータ整合性が必要な場合には、RDBMSの方が適している場合がある。
+
+したがって、MongoDBとRDBMSはどちらか一方が常に優れているのではなく、扱うデータやシステムの目的に応じて選択することが重要である。
+
+課題3-2
+基本課題3-2 セキュリティ
+1. SQLインジェクションとは
+
+SQLインジェクションとは、Webアプリケーションやプログラムへの入力を利用して、開発者が意図していないSQL文を実行させる攻撃方法である。
+
+ユーザーから受け取った文字列をSQL文に直接連結している場合に発生しやすい。
+
+SQLインジェクションが成功すると、本来許可されていないデータの取得、変更、削除などを実行される可能性がある。そのため、データベースを利用するシステムでは重要なセキュリティ上の問題となる。
+
+2. 攻撃方法
+
+今回のweak sqlite.rbでは、次の部分に問題がある。
+
+str = "UPDATE students SET name = \"#{new_name}\" WHERE student_id = #{id}"
+
+
+id と new_name は標準入力から取得している。その値をチェックせず、そのままSQL文に埋め込んでいる。
+
+例えば通常、
+
+1,Taro
+
+
+と入力すると、
+
+UPDATE students SET name = "Taro" WHERE student_id = 1
+
+
+が実行される。
+
+しかし、入力にSQLの構文を含めることで、プログラムが作成するSQL文を意図しない形に変更できる。
+
+例えば、名前の入力に引用符などのSQL構文を含めることで、元々プログラムが用意した文字列の外にSQL文を追加できる可能性がある。
+
+このように、入力値をSQL文の一部として直接扱っていることがSQLインジェクションの原因となる。
+
+3. weak sqlite.rbへの攻撃例
+
+例えば、通常の入力として、
+
+1,Taro
+
+
+を入力すると、
+
+UPDATE students SET name = "Taro" WHERE student_id = 1
+
+
+となる。
+
+一方、入力値にSQL構文を含めると、プログラムが想定していないSQL文を生成できる場合がある。
+
+例えば、入力値として引用符やSQLの条件式などを含めることで、WHERE 条件を変更したり、複数のSQL文を実行できる可能性がある。
+
+このプログラムでは execute_batch を使用しているため、入力値によってSQL文を追加できる構造になっている点も危険である。
+
+実際の攻撃では、データの内容を変更するだけでなく、データを削除したり、データベースの情報を取得したりする攻撃につながる可能性がある。
+
+4. 対策
+
+SQLインジェクションへの代表的な対策は、SQL文とユーザーから入力された値を分離することである。
+
+SQLite3では、プレースホルダを使用することができる。
+
+例えば、次のように変更する。
+
+# coding: utf-8
+require 'sqlite3'
+
+db = SQLite3::Database.new("sandbox.db")
+
+id, new_name = gets.chomp.split(",")
+
+sql = "UPDATE students SET name = ? WHERE student_id = ?"
+
+db.execute(sql, new_name, id)
+
+db.close
+
+
+この方法では、ユーザーが入力した値がSQL文そのものとして解釈されにくくなる。
+
+つまり、
+
+"UPDATE students SET name = \"#{new_name}\" WHERE student_id = #{id}"
+
+
+のように文字列を直接連結するのではなく、
+
+"UPDATE students SET name = ? WHERE student_id = ?"
+
+
+として、値を別の引数として渡す。
+
+このような方法をプリペアドステートメントやプレースホルダと呼ぶ。
+
+5. まとめ
+
+SQLインジェクションは、ユーザーから受け取った入力をSQL文に直接組み込むことで発生する攻撃である。
+
+今回のweak sqlite.rbでは、id と new_name をSQL文に直接埋め込んでいることが問題である。
+
+対策として、SQLite3のプレースホルダを使用し、SQL文と入力値を分離することが重要である。
+
+また、入力値の検証や、データベースユーザーに必要以上の権限を与えないことなども、セキュリティ対策として重要である。
+
+課題3-3
+基本課題3-3 データベース作成
+1. データベース
+
+SQLiteを使用し、lab.db というデータベースを作成した。
+
+sqlite3 lab.db
+
+2. labsテーブルの作成
+
+研究室のIDと研究室名を保存するlabsテーブルを作成した。
+
+CREATE TABLE labs (
+  id INTEGER PRIMARY KEY,
+  lab_name TEXT
+);
+
+3. lab_membersテーブルの作成
+
+研究室のメンバー情報を保存するlab_membersテーブルを作成した。
+
+CREATE TABLE lab_members (
+  id INTEGER PRIMARY KEY,
+  lab_id INTEGER,
+  member_name TEXT,
+  position TEXT
+);
+
+
+lab_idはlabsテーブルのidに対応しており、研究室とメンバーを関連付けるために使用する。
+
+4. CSVファイルからのデータ登録
+
+SQLiteの.separatorを使用して区切り文字をカンマに設定した。
+
+.separator ,
+
+
+その後、CSVファイルをそれぞれのテーブルにインポートした。
+
+.import labs.csv labs
+.import lab_members.csv lab_members
+
+5. データの確認
+
+登録した研究室を確認するため、以下のSQLを実行した。
+
+SELECT * FROM labs;
+
+
+メンバーを確認するため、以下のSQLを実行した。
+
+SELECT * FROM lab_members;
+
+
+また、研究室とメンバーを結合して確認するため、以下のSQLを実行した。
+
+SELECT labs.lab_name, lab_members.member_name, lab_members.position
+FROM labs
+INNER JOIN lab_members
+ON labs.id = lab_members.lab_id;
+
+
+このSQLによって、labsテーブルとlab_membersテーブルをlabs.idとlab_members.lab_idで結合し、研究室名、メンバー名、役職を表示できることを確認した。
+
+sqlite> SELECT labs.lab_name, lab_members.member_name, lab_members.position
+FROM labs
+INNER JOIN lab_members
+ON labs.id = lab_members.lab_id;
+Mathematical Science,Brenton_Evans,D1
+Mathematical Science,Spring_Brandi,D1
+Mathematical Science,June_Killinger,D2
+Mathematical Science,Ettie_Judd,D2
+Mathematical Science,Adaline_Yazzie,M1
+Mathematical Science,Leia_Driscoll,M1
+Mathematical Science,Sal_Hadfield,M1
+Mathematical Science,Randal_Spang,M1
+Mathematical Science,Abdul_Dossey,M2
+Mathematical Science,Ruth_Emmick,M2
+Advanced Electronics,Federico_Brumit,B3
+Advanced Electronics,Alicia_Weatherbee,B4
+Advanced Electronics,Zetta_Kreisel,B4
+Advanced Electronics,Alvera_Corle,D1
+Advanced Electronics,Antone_Thrash,D2
+Advanced Electronics,Mao_Winberg,D2
+Advanced Electronics,Lillia_Corzine,D3
+Advanced Electronics,Sheba_Mckee,D3
+Advanced Electronics,Ocie_Mcquay,D3
+Advanced Electronics,Martina_Peavler,D3
+Advanced Electronics,Ruby_Chubb,D3
+Advanced Electronics,Dale_Gidney,M1
+Advanced Electronics,Millicent_Ricard,M1
+Advanced Electronics,Edmundo_Misiewicz,M1
+Advanced Electronics,Andree_Ruffin,M2
+Advanced Electronics,Virginia_Buckingham,M2
+Advanced Electronics,Marquerite_Buerger,M2
+Advanced Electronics,Nicolle_Mackay,M2
+Advanced Electronics,Cortez_Hanlin,M2
+Advanced Electronics,Carina_Neville,M2
+Advanced Electronics,Gudrun_Unzueta,M2
+Advanced Electronics,Twyla_Park,M2
+Bioengineering,Ike_Merriweather,B3
+Bioengineering,Nelson_Garden,B3
+Bioengineering,Josefa_Aberle,B4
+Bioengineering,Ervin_Bollman,D1
+Bioengineering,Mathilde_Baysinger,D1
+Bioengineering,Rolland_Buelow,D1
+Bioengineering,Leslie_Ranum,D1
+Bioengineering,Major_Birk,D2
+Bioengineering,Fredric_Ice,D2
+Bioengineering,Arminda_Sanchez,M1
+Bioengineering,Kathleen_Bloomer,M1
+Bioengineering,Lawanna_Booe,M2
+Bioengineering,Cindie_Oleary,M2
+hci-lab,Ana_Forth,B3
+hci-lab,Greg_Woo,B3
+hci-lab,Dannette_Audia,B3
+hci-lab,Sherika_Sidle,B4
+hci-lab,Nichelle_Koser,B4
+hci-lab,Chia_Papageorge,B4
+hci-lab,Scot_Declue,D1
+hci-lab,Mitsue_Harmon,D2
+hci-lab,Kam_Crosby,D3
+hci-lab,Hallie_Heinz,D3
+hci-lab,Rose_Satcher,M1
+hci-lab,Milissa_Kuta,M1
+hci-lab,Lucile_Chung,M2
+hci-lab,Yanira_Lollar,M2
+hci-lab,Lavon_Delaney,M2
+hci-lab,Kristal_Don,M2
+hci-lab,Masahiro Kitagawa,M2
+hci-lab,Sho Mitarai,M2
+hci-lab,Tetsuo Ono,Prof.
+hci-lab,Daisuke Sakamoto,Prof.
+System Creation,Vonnie_Booker,B3
+System Creation,Adele_Hegna,B3
+System Creation,Sandy_Dewitt,B4
+System Creation,Leida_Vossen,D1
+System Creation,Sadye_Hildebrand,D1
+System Creation,Tommie_Burnham,D1
+System Creation,Jeanna_Pawlowski,D1
+System Creation,Mayra_Marks,D2
+System Creation,Renee_Canino,D3
+System Creation,Felix_Dorman,D3
+System Creation,Laine_Such,D3
+System Creation,Floy_Pedro,M1
+System Creation,Jon_Steward,M1
+System Creation,Gricelda_Rapp,M1
+System Creation,Dagmar_Housel,M1
+System Creation,Mindi_Mcelwain,M2
+High Performance Computing,Angele_Midgett,B3
+High Performance Computing,Gavin_Rustad,B3
+High Performance Computing,Claud_Constable,B4
+High Performance Computing,Janiece_Every,B4
+High Performance Computing,Wally_Tuck,D1
+High Performance Computing,Pricilla_Wiste,D1
+High Performance Computing,Octavia_Beedle,D1
+High Performance Computing,Rena_Schuh,D1
+High Performance Computing,Isaac_Corner,D1
+High Performance Computing,Zulema_Bautista,D1
+High Performance Computing,Janiece_Tomasi,D2
+High Performance Computing,Rosita_Bozarth,D2
+High Performance Computing,Nichole_Corby,D2
+High Performance Computing,Christiana_Harring,D2
+High Performance Computing,Lorriane_Lowy,D2
+High Performance Computing,Vinita_Deutsch,D3
+High Performance Computing,Tyisha_Phalen,D3
+High Performance Computing,Ellsworth_Bentley,M1
+High Performance Computing,Geraldo_Schlichting,M1
+High Performance Computing,Norbert_Samuels,M2
+High Performance Computing,Kasie_Coyle,M2
+High Performance Computing,Dianne_Fagundes,M2
+Algorithm,Hellen_Glotfelty,B3
+Algorithm,Ezekiel_Widger,B3
+Algorithm,Kami_Daigre,B3
+Algorithm,Josette_Almanzar,B3
+Algorithm,Johna_Pendergast,B4
+Algorithm,Irma_Miyamoto,B4
+Algorithm,Santa_Honaker,B4
+Algorithm,Kassandra_Gillan,D1
+Algorithm,Trinh_Maillet,D1
+Algorithm,Chauncey_Stough,D1
+Algorithm,Judi_Leggett,D1
+Algorithm,Fernando_Harada,D1
+Algorithm,Marion_Koran,D2
+Algorithm,Audria_Canela,D2
+Algorithm,Jarrod_Derose,D2
+Algorithm,Len_Domino,D3
+Algorithm,Clifton_Parfait,D3
+Algorithm,Chasity_West,D3
+Algorithm,Mika_Rosenbaum,M2
+Algorithm,Saran_Thurston,M2
+Algorithm,Kyla_Shaddix,M2
+
+
+課題3-4
+
+$ ruby lab_search.rb
+hci-lab
+Ana_Forth
+Greg_Woo
+Dannette_Audia
+Sherika_Sidle
+Nichelle_Koser
+Chia_Papageorge
+Scot_Declue
+Mitsue_Harmon
+Kam_Crosby
+Hallie_Heinz
+Rose_Satcher
+Milissa_Kuta
+Lucile_Chung
+Yanira_Lollar
+Lavon_Delaney
+Kristal_Don
+Masahiro Kitagawa
+Sho Mitarai
+Tetsuo Ono
+Daisuke Sakamoto
+
+
+$ ruby member_search.rb
+Daisuke Sakamoto
+Ana_Forth
+Chia_Papageorge
+Dannette_Audia
+Greg_Woo
+Hallie_Heinz
+Kam_Crosby
+Kristal_Don
+Lavon_Delaney
+Lucile_Chung
+Masahiro Kitagawa
+Milissa_Kuta
+Mitsue_Harmon
+Nichelle_Koser
+Rose_Satcher
+Scot_Declue
+Sherika_Sidle
+Sho Mitarai
+Tetsuo Ono
+Yanira_Lollar
+
+
+基本課題3-4 データベース操作
+
+基本課題3-3で作成したSQLiteデータベースlab.dbをRubyから操作した。
+
+lab_search.rb
+
+研究室名を標準入力から受け取り、その研究室に所属するメンバーの一覧を表示するプログラムを作成した。
+
+labsテーブルとlab_membersテーブルをlabs.idとlab_members.lab_idでINNER JOINし、入力された研究室名と一致するデータを検索した。
+
+SQLの条件にはプレースホルダ?を使用した。
+
+db.execute(sql, [lab_name]) do |row|
+  puts row[0]
+end
+
+
+実行例：
+
+$ ruby lab_search.rb
+hci-lab
+Tetsuo Ono
+Daisuke Sakamoto
+Masahiro Kitagawa
+
+member_search.rb
+
+メンバー名を標準入力から受け取り、そのメンバーが所属する研究室を検索した。その後、同じlab_idを持つメンバーを検索することで、同じ研究室の他のメンバーを表示した。
+
+同じ研究室のメンバーを検索するため、lab_membersテーブルをtargetとotherという別名で扱い、自己結合を行った。
+
+また、
+
+AND other.member_name != ?
+
+
+を指定することで、入力した本人は結果から除外した。
+
+実行例：
+
+$ ruby member_search.rb
+Daisuke Sakamoto
+Ana_Forth
+Greg_Woo
+Dannette_Audia
+Masahiro Kitagawa
+Sho Mitarai
+Tetsuo Ono
+
+考察
+
+RubyからSQLite3 gemを利用することで、SQLを実行してデータベースの検索結果を取得できた。
+
+また、ユーザーが入力した値をSQL文に直接埋め込むのではなく、プレースホルダを使用した。これにより、入力値によってSQL文そのものが変更されることを防ぎ、SQLインジェクション対策にもなる。
 
 
 
+応用3_1
+
+応用課題3-1 データベース操作（Web版）
+1. 概要
+
+基本課題3-4で作成したデータベース検索機能を、Webサーバから利用できるようにした。
+
+WebサーバにはRubyのWEBrickを使用し、データベースにはSQLiteを使用した。
+
+lab.db に保存されている labs テーブルと lab_members テーブルを検索し、ブラウザ上に検索結果を表示する。
+
+2. 実装した機能
+研究室名からメンバーを検索
+
+以下のリクエストを受け付ける。
+
+http://127.0.0.1:2000/lab_search?lab_name=hci-lab
 
 
+入力された研究室名を labs テーブルから検索し、研究室の id を取得する。
+
+その後、取得した id と lab_members テーブルの lab_id を利用して、その研究室に所属するメンバーを検索する。
+
+研究室名の検索では、データベースから id と lab_name を取得し、Ruby側で入力された研究室名と比較するようにした。
+
+メンバー名から他のメンバーを検索
+
+以下のリクエストを受け付ける。
+
+http://127.0.0.1:2000/member_search?member_name=Daisuke%20Sakamoto
 
 
+入力されたメンバー名を lab_members テーブルから検索し、そのメンバーの lab_id を取得する。
+
+その後、同じ lab_id を持つメンバーを検索する。
+
+検索結果には、入力された本人が含まれないようにRuby側で比較して除外した。
+
+3. SQLについて
+
+研究室名からメンバーを検索する処理では、まず以下のSQLを使用して labs テーブルから研究室のIDと名前を取得した。
+
+SELECT id, lab_name FROM labs
 
 
+取得したデータをRuby側で比較し、入力された研究室名と一致した場合、その研究室の id を取得する。
+
+その後、以下のSQLを使用して、取得した lab_id と一致するメンバーを検索した。
+
+SELECT member_name
+FROM lab_members
+WHERE lab_id = ?
 
 
+? の部分には、先ほど取得した lab_id が入る。
+
+メンバー名から検索する処理では、以下のSQLを使用して lab_members テーブルから lab_id と member_name を取得した。
+
+SELECT lab_id, member_name FROM lab_members
 
 
+取得したデータをRuby側で比較し、入力されたメンバー名と一致するデータから lab_id を取得する。
+
+その後、以下のSQLで同じ研究室に所属するメンバーを検索した。
+
+SELECT member_name
+FROM lab_members
+WHERE lab_id = ?
 
 
+取得したメンバーの名前と入力された名前をRuby側で比較し、入力された本人を結果から除外した。
+
+SQLに値を直接文字列連結するのではなく、? のプレースホルダを使用して値を渡すことで、安全にSQLを実行できるようにした。
+
+4. 実行結果
+
+サーバを以下のコマンドで起動した。
+
+$ ruby labSearchServer.rb
+
+
+ブラウザから以下のURLへアクセスした。
+
+http://127.0.0.1:2000/lab_search?lab_name=hci-lab
+
+
+その結果、hci-lab に所属するメンバーの一覧がブラウザに表示された。
+
+また、以下のURLへアクセスした。
+
+http://127.0.0.1:2000/member_search?member_name=Daisuke%20Sakamoto
+
+
+その結果、Daisuke Sakamoto と同じ研究室に所属する他のメンバーがブラウザに表示された。
+
+例えば、以下のようなメンバーが表示された。
+
+Ana_Forth
+Greg_Woo
+Dannette_Audia
+Sherika_Sidle
+Nichelle_Koser
+Chia_Papageorge
+Scot_Declue
+Mitsue_Harmon
+Kam_Crosby
+Hallie_Heinz
+Rose_Satcher
+Milissa_Kuta
+Lucile_Chung
+Yanira_Lollar
+Lavon_Delaney
+Kristal_Don
+Masahiro Kitagawa
+Sho Mitarai
+Tetsuo Ono
+
+5. 考察
+
+WEBrickを利用することで、基本課題3-4で作成したRubyとSQLiteによるデータベース検索処理を、Webブラウザから利用できるようになった。
+
+lab_search では、研究室名から研究室のIDを取得し、そのIDを利用して所属するメンバーを検索した。
+
+member_search では、メンバー名から所属する研究室のIDを取得し、その研究室に所属する他のメンバーを検索した。
+
+また、SQLに値を直接文字列として連結するのではなく、プレースホルダを使用して値を渡すことで、入力値がSQL文の一部として解釈されることを防ぐようにした。
+
+今回の実装では、検索条件の一部をRuby側で比較する方法も使用した。これにより、今回使用している lab.db のデータに合わせて、研究室名やメンバー名を検索できるようにした。
+
+
+応用3_2
 
 
 

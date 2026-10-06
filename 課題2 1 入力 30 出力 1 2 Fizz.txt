@@ -768,5 +768,43 @@ member_search では、メンバー名から所属する研究室のIDを取得�
 
 応用3_2
 
+http://127.0.0.1:2000/index
+yamada, 1
+yamada, 2
+yamada, 3
+http://127.0.0.1:2000/read?id=1
+yamada,nullpo
+http://127.0.0.1:2000/read?id=99
+Message not found
+http://127.0.0.1:2000/write?user=yamada&msg=die
+Your message contains a banned word
+
+$ sqlite3 board.db "SELECT * FROM posts;"
+1|yamada|nullpo
+2|yamada|hoge
+3|yamada|ga
+
+
+応用3_3
+
+$ sqlite3 users.db "SELECT * FROM users;"
+1|yamada|hoge
+2|tanaka|hirakegoma
+3|sato|abc123
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

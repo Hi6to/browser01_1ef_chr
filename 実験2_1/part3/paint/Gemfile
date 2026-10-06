@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+# 発展課題（共有お絵かきアプリ）用の Gemfile
+source "https://rubygems.org"
+
+gem 'sinatra'
+gem 'faye-websocket' # WebSocket 通信を扱うライブラリ
+gem 'puma'           # WebSocket に対応した Web サーバ
+gem 'rackup'         # Sinatra 4 で ruby app.rb から起動するために必要

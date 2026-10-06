@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Shared Paint</title>
+<style>
+  #canvas { border: 1px solid #333; cursor: crosshair; }
+</style>
+</head>
+<body>
+<h1>Shared Paint</h1>
+<p>
+  色: <input type="color" id="color" value="#000000">
+  <button id="clear">全消去</button>
+  <span id="status">接続中...</span>
+</p>
+<canvas id="canvas" width="800" height="500"></canvas>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const colorInput = document.getElementById('color');
+  const status = document.getElementById('status');
+
+  // 同じサーバの / に WebSocket で接続する
+  const ws = new WebSocket('ws://' + location.host + '/');
+  ws.onopen = () => { status.textContent = '接続しました'; };
+  ws.onclose = () => { status.textContent = '切断されました（再読み込みしてください）'; };
+
+  // 1本の線分をキャンバスに描く
+  function drawLine(line) {
+    ctx.strokeStyle = line.color;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(line.x0, line.y0);
+    ctx.lineTo(line.x1, line.y1);
+    ctx.stroke();
+  }
+
+  // マウスの位置をキャンバス上の座標に変換する
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  let drawing = false; // マウスのボタンが押されているか
+  let last = null;     // 直前のマウスの位置
+
+  canvas.addEventListener('mousedown', (e) => {
+    drawing = true;
+    last = getPos(e);
+  });
+
+  // マウスを動かすたびに，直前の位置から今の位置までの線分を描いてサーバに送る
+  canvas.addEventListener('mousemove', (e) => {
+    if (!drawing) return;
+    const p = getPos(e);
+    const line = { type: 'line', x0: last.x, y0: last.y, x1: p.x, y1: p.y, color: colorInput.value };
+    drawLine(line); // 自分の画面にはすぐに描く
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(line));
+    last = p;
+  });
+
+  window.addEventListener('mouseup', () => { drawing = false; });
+
+  // 全消去ボタン：サーバに全消去を送る（サーバから全員に全消去が届く）
+  document.getElementById('clear').addEventListener('click', () => {
+    ws.send(JSON.stringify({ type: 'clear' }));
+  });
+
+  // サーバからメッセージを受け取ったとき
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'line') {
+      drawLine(data); // 他の人が描いた線を描く
+    } else if (data.type === 'clear') {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+</script>
+</body>
+</html>

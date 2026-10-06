@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>掲示板</title>
+</head>
+<body>
+<h1>掲示板</h1>
+<p>ようこそ、<%= h current_user.name %> さん</p>
+
+<!-- ログアウトボタン（状態を変える操作なので POST で送る） -->
+<form method="post" action="/logout">
+  <%= csrf_tag %>
+  <input type="submit" value="ログアウト">
+</form>
+
+<h2>書き込み</h2>
+<form method="post" action="/board">
+  <%= csrf_tag %>
+  <textarea name="content" rows="3" cols="50"></textarea><br>
+  <input type="submit" value="書き込む">
+</form>
+
+<h2>書き込み一覧（<%= @messages.size %>件）</h2>
+<table border="1">
+  <tr>
+    <th>時刻</th>
+    <th>ユーザ名</th>
+    <th>メッセージ</th>
+  </tr>
+  <% @messages.each do |message| %>
+  <tr>
+    <!-- created_at は UTC で保存されているので，localtime で日本時間に変換して表示 -->
+    <td><%= message.created_at.localtime.strftime('%Y-%m-%d %H:%M:%S') %></td>
+    <td><%= h message.user.name %></td>
+    <!-- エスケープした後で改行を <br> に置き換え，改行を含むメッセージも表示できるようにする -->
+    <td><%= h(message.content).gsub("\n", '<br>') %></td>
+  </tr>
+  <% end %>
+</table>
+</body>
+</html>

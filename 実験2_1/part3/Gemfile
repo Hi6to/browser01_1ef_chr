@@ -1,0 +1,8 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem 'sinatra'
+gem 'sinatra-contrib' # 実習書の 'sinatra-contlib' は誤植（sinatra/reloader はこの gem に含まれる）
+gem 'activerecord', "7.0.4"
+gem 'sqlite3', "1.5.3"

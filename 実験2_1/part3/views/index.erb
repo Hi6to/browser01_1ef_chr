@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title><%= h @title %></title>
+</head>
+<body>
+<h1><%= h @title %></h1>
+
+<!-- 研究室名で検索するフォーム（GET で /lab_search?lab_name=... に送信） -->
+<h2>研究室名からメンバーを検索</h2>
+<form method="get" action="lab_search">
+  <input type="text" name="lab_name">
+  <input type="submit" value="検索">
+</form>
+
+<!-- メンバー名で検索するフォーム（GET で /member_search?member_name=... に送信） -->
+<h2>メンバー名から同じ研究室のメンバーを検索</h2>
+<form method="get" action="member_search">
+  <input type="text" name="member_name">
+  <input type="submit" value="検索">
+</form>
+
+<!-- 入力の参考として，登録されている研究室名を一覧表示する -->
+<h2>研究室一覧</h2>
+<ul>
+<% @labs.each do |lab| %>
+  <li><%= h lab.lab_name %></li>
+<% end %>
+</ul>
+</body>
+</html>

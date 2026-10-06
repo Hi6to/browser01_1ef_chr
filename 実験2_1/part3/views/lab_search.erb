@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title><%= h @title %></title>
+</head>
+<body>
+<h1><%= h @title %></h1>
+
+<% if @lab.nil? %>
+  <!-- 該当する研究室が無い場合 -->
+  <p>研究室「<%= h @lab_name %>」は見つかりませんでした。</p>
+<% else %>
+  <h2><%= h @lab.lab_name %> のメンバー（<%= @members.size %>名）</h2>
+  <table border="1">
+    <tr>
+      <th>member_name</th>
+      <th>position</th>
+    </tr>
+    <% @members.each do |member| %>
+    <tr>
+      <td><%= h member.member_name %></td>
+      <td><%= h member.position %></td>
+    </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<p><a href="/">検索画面に戻る</a></p>
+</body>
+</html>

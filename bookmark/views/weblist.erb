@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Web Bookmark</title>
+</head>
+<body>
+<h1>Web Bookmark</h1>
+<p><%= h current_user.name %> さんのお気に入り</p>
+
+<!-- ログアウトボタン -->
+<form method="post" action="/logout">
+  <%= csrf_tag %>
+  <input type="submit" value="ログアウト">
+</form>
+
+<h2>新しく登録</h2>
+<% if @error %>
+  <p style="color: red;"><%= h @error %></p>
+<% end %>
+<form method="post" action="/weblist">
+  <%= csrf_tag %>
+  <table>
+    <tr><td>ページ名</td><td><input type="text" name="title" size="40"></td></tr>
+    <tr><td>URL</td><td><input type="text" name="url" size="40"></td></tr>
+  </table>
+  <input type="submit" value="登録">
+</form>
+
+<h2>お気に入り一覧（<%= @bookmarks.size %>件）</h2>
+<table border="1">
+  <tr>
+    <th>ページ名</th>
+    <th>URL</th>
+    <th>登録日時</th>
+    <th></th>
+  </tr>
+  <% @bookmarks.each do |bookmark| %>
+  <tr>
+    <!-- ページ名をリンクにする（新しいタブで開き，開いた先から元のページを操作されないよう noopener を付ける） -->
+    <td><a href="<%= h bookmark.url %>" target="_blank" rel="noopener noreferrer"><%= h bookmark.title %></a></td>
+    <td><%= h bookmark.url %></td>
+    <td><%= bookmark.created_at.localtime.strftime('%Y-%m-%d %H:%M') %></td>
+    <td>
+      <!-- 削除ボタン（追加機能） -->
+      <form method="post" action="/weblist/<%= bookmark.id %>/delete">
+        <%= csrf_tag %>
+        <input type="submit" value="削除">
+      </form>
+    </td>
+  </tr>
+  <% end %>
+</table>
+</body>
+</html>

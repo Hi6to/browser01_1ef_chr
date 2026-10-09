@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Web Bookmark - ログイン</title>
+</head>
+<body>
+<h1>Web Bookmark</h1>
+
+<!-- ログインや登録に失敗した場合のメッセージ -->
+<% if @error %>
+  <p style="color: red;"><%= h @error %></p>
+<% end %>
+
+<h2>ログイン</h2>
+<form method="post" action="/login">
+  <%= csrf_tag %>
+  <table>
+    <tr><td>ユーザ名</td><td><input type="text" name="name"></td></tr>
+    <tr><td>パスワード</td><td><input type="password" name="password"></td></tr>
+  </table>
+  <input type="submit" value="ログイン">
+</form>
+
+<h2>新規登録</h2>
+<form method="post" action="/signup">
+  <%= csrf_tag %>
+  <table>
+    <tr><td>ユーザ名</td><td><input type="text" name="name"></td></tr>
+    <tr><td>パスワード</td><td><input type="password" name="password"></td></tr>
+  </table>
+  <input type="submit" value="登録">
+</form>
+</body>
+</html>
